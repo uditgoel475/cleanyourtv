@@ -3,6 +3,7 @@ package com.gathin.tvhome;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -18,6 +19,7 @@ import android.widget.Toast;
  * closes the panel.
  */
 public final class QuickSettingsActivity extends Activity {
+    private static final String PLAY_STORE = "com.android.vending";
 
     @Override
     protected void onCreate(Bundle state) {
@@ -30,6 +32,7 @@ public final class QuickSettingsActivity extends Activity {
         addRow(rows, R.drawable.ic_wifi, R.string.quick_network, 0, SystemSettings.intent(this, Settings.ACTION_WIFI_SETTINGS));
         addRow(rows, R.drawable.ic_apps, R.string.quick_apps, R.string.quick_apps_hint,
                 SystemSettings.intent(this, Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS));
+        addPlayStore(rows);
         // Through Home, so it rebuilds with the new choices when Launcher settings closes.
         addRow(rows, R.drawable.ic_home_settings, R.string.launcher_settings, 0,
                 new Intent(this, MainActivity.class).setAction(MainActivity.ACTION_LAUNCHER_SETTINGS));
@@ -49,6 +52,22 @@ public final class QuickSettingsActivity extends Activity {
         super.onPause();
         finish();
         overridePendingTransition(0, 0);
+    }
+
+    /** The Play Store's TV entry, with its own logo; no row when it is missing or disabled. */
+    private void addPlayStore(LinearLayout rows) {
+        PackageManager pm = getPackageManager();
+        Intent store = pm.getLeanbackLaunchIntentForPackage(PLAY_STORE);
+        if (store == null) store = pm.getLaunchIntentForPackage(PLAY_STORE);
+        if (store == null) return;
+        addRow(rows, R.drawable.ic_apps, R.string.quick_play_store, 0, store);
+        ImageView icon = rows.getChildAt(rows.getChildCount() - 1).findViewById(R.id.icon);
+        try {
+            icon.setImageDrawable(pm.getApplicationIcon(PLAY_STORE));
+            icon.setImageTintList(null);
+        } catch (PackageManager.NameNotFoundException ignored) {
+            // the generic apps icon stays
+        }
     }
 
     private void addRow(LinearLayout rows, int icon, int title, int status, Intent target) {

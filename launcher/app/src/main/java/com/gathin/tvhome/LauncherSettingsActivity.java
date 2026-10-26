@@ -10,6 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +29,13 @@ public final class LauncherSettingsActivity extends Activity {
     private static final int[] DOCK_OPACITIES = {100, 70, 50, 30};
     private final TextView[] dockChoices = new TextView[DOCK_OPACITIES.length];
     private TextView wallpaperChoice;
+    private TextView sliderChoice;
+    private boolean wallpaperSlider;
+    private static final int[] ROTATION_MINUTES = {5, 15, 30, 60};
+    private TextView rotationChoice;
+    private int rotationMinutes;
+    private TextView greetingNameChoice;
+    private String greetingName;
     private TextView animationsChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
@@ -101,6 +109,32 @@ public final class LauncherSettingsActivity extends Activity {
         }
         wallpaperChoice = findViewById(R.id.wallpaperChoice);
         wallpaperChoice.setOnClickListener(v -> showWallpaperPicker());
+        // Only a rotating collection has arrows to turn on or off.
+        wallpaperSlider = config.wallpaperSlider;
+        sliderChoice = findViewById(R.id.sliderChoice);
+        if (config.wallpapers.size() > 1) {
+            sliderChoice.setVisibility(View.VISIBLE);
+            sliderChoice.setOnClickListener(v -> {
+                wallpaperSlider = !wallpaperSlider;
+                choices.edit().putBoolean(Config.WALLPAPER_SLIDER_KEY, wallpaperSlider).apply();
+                changed();
+                refresh();
+            });
+        }
+        rotationMinutes = config.wallpaperRotationMinutes;
+        rotationChoice = findViewById(R.id.rotationChoice);
+        if (config.wallpapers.size() > 1) {
+            rotationChoice.setVisibility(View.VISIBLE);
+            rotationChoice.setOnClickListener(v -> {
+                rotationMinutes = nextRotation(rotationMinutes);
+                choices.edit().putInt(Config.ROTATION_KEY, rotationMinutes).apply();
+                changed();
+                refresh();
+            });
+        }
+        greetingName = config.greetingName;
+        greetingNameChoice = findViewById(R.id.greetingNameChoice);
+        greetingNameChoice.setOnClickListener(v -> showGreetingNameEditor());
         animationsChoice = findViewById(R.id.animationsChoice);
         animationsChoice.setOnClickListener(v -> {
             animations = !animations;
@@ -133,13 +167,17 @@ public final class LauncherSettingsActivity extends Activity {
             if (!hasOnTvChoices()) return;
             choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
-                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).commit();
+                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).remove(Config.WALLPAPER_SLIDER_KEY)
+                    .remove(Config.ROTATION_KEY).remove(Config.GREETING_NAME_KEY).commit();
             Config current = Config.load(this);
             columns = current.columns;
             rowsBelowDock = current.rowsBelowDock;
             dockOpacity = current.dockOpacity;
             animations = current.animations;
             advancedEffects = current.animations && current.advancedEffects;
+            wallpaperSlider = current.wallpaperSlider;
+            rotationMinutes = current.wallpaperRotationMinutes;
+            greetingName = current.greetingName;
             changed();
             refresh();
         });
@@ -244,6 +282,33 @@ public final class LauncherSettingsActivity extends Activity {
         }
     }
 
+    /** The next interval after the current one, round the list; an interval not on it starts from the first. */
+    static int nextRotation(int current) {
+        for (int i = 0; i < ROTATION_MINUTES.length; i++) {
+            if (ROTATION_MINUTES[i] == current) return ROTATION_MINUTES[(i + 1) % ROTATION_MINUTES.length];
+        }
+        return ROTATION_MINUTES[0];
+    }
+
+    /** The name after the greeting, typed with the TV's keyboard; empty leaves the greeting alone. */
+    private void showGreetingNameEditor() {
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setText(greetingName);
+        input.setSelection(input.getText().length());
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.greeting_name_label)
+                .setView(input)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    greetingName = input.getText().toString().trim();
+                    choices.edit().putString(Config.GREETING_NAME_KEY, greetingName).apply();
+                    changed();
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     private static int indexOf(List<File> images, String name) {
         if (name == null) return -1;
         for (int i = 0; i < images.size(); i++) {
@@ -291,6 +356,11 @@ public final class LauncherSettingsActivity extends Activity {
                         : wallpaperCurrent != null ? wallpaperCurrent
                         : getString(R.string.wallpaper_theme_default)));
         openOnStartChoice.setText(getString(R.string.open_on_start_state, openOnStartLabel()));
+        sliderChoice.setText(getString(R.string.wallpaper_slider_state,
+                getString(wallpaperSlider ? R.string.on : R.string.off)));
+        rotationChoice.setText(getString(R.string.rotation_state, rotationMinutes));
+        greetingNameChoice.setText(getString(R.string.greeting_name_state,
+                greetingName.isEmpty() ? getString(R.string.off) : greetingName));
         followThemeChoice.setSelected(!hasOnTvChoices());
     }
 
@@ -298,7 +368,8 @@ public final class LauncherSettingsActivity extends Activity {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
-                || choices.contains(OpenOnStart.KEY);
+                || choices.contains(OpenOnStart.KEY) || choices.contains(Config.WALLPAPER_SLIDER_KEY)
+                || choices.contains(Config.ROTATION_KEY) || choices.contains(Config.GREETING_NAME_KEY);
     }
 
     private void open(Intent intent) {

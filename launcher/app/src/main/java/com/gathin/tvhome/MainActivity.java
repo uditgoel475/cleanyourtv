@@ -47,6 +47,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.Log;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -284,6 +285,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private AppLibraryDialog appLibrary;
     private boolean appLibrarySelection;
     private boolean libraryOkOpens;
+    /** restore_key_services: each return to Home checks the remote's helpers are still on (ServiceRepair). */
+    private boolean restoreKeyServices;
+    /** back_to_first_app: Back anywhere on Home returns to the first app. */
+    private boolean backToFirstApp;
+    private boolean greetingTitleCase;
     private boolean libraryFocusPending;
     private RecyclerView.OnScrollListener pendingFocusScroll;
 
@@ -381,7 +387,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         libraryOkOpens = cfg.libraryOkOpens;
         // restore_key_services: after a force stop, put back the remote's accessibility helpers that Android took
         // off the list (needs WRITE_SECURE_SETTINGS, granted by build-and-install with RESTORE_KEY_SERVICES=1).
-        if (cfg.restoreKeyServices) ServiceRepair.restore(this);
+        // Checked in onResume: the list can also be emptied while Home's process stays alive (a reboot that
+        // keeps the launcher cached, a cleaner), and a check only at process start never saw that.
+        restoreKeyServices = cfg.restoreKeyServices;
         settingsRevision = settingsRevision();
         applyViewInputsHandler(cfg.handleViewInputs);
         settingsKeycodes = cfg.settingsKeycodes;
@@ -487,6 +495,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (lunar) lunarDate.setVisibility(View.VISIBLE);
         greetingName = cfg.greetingName;
         if (cfg.dateBelowClock) moveDateBelowClock();
+        if (cfg.greetingBelowClock) moveGreetingBelowClock();
+        greetingTitleCase = cfg.greetingBelowClock;
+        backToFirstApp = cfg.backToFirstApp;
         if (shamsi) {
             shamsiDate.setVisibility(View.VISIBLE);
             TextView date = findViewById(R.id.date);
@@ -699,8 +710,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             ((TextView) btnSettings).setText(R.string.launcher_settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_home_settings_pill, 0, 0, 0);
         }
+        boolean settingsButtonPanel = cfg.settingsButtonPanel;
         btnSettings.setOnClickListener(v -> {
-            if (launcherSettingsButton) startActivityForResult(
+            if (settingsButtonPanel) open(new Intent(this, QuickSettingsActivity.class));
+            else if (launcherSettingsButton) startActivityForResult(
                     new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
             else open(systemIntent(Settings.ACTION_SETTINGS));
         });
@@ -916,6 +929,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onResume() {
         super.onResume();
+        if (restoreKeyServices) ServiceRepair.restore(this);
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
             recreate();
@@ -1559,7 +1573,62 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public void onBackPressed() {
-        // Home screen: Back goes nowhere.
+        // Home screen: Back goes nowhere, except off a wallpaper arrow; back_to_first_app returns to the first app.
+        if (backToFirstApp) resetHome();
+        else wallpaperPlayer.leaveArrow();
+    }
+
+    /** back_to_first_app: the first app takes focus, with the grid back at the top. */
+    private void resetHome() {
+        cancelPendingFocusScroll();
+        grid.scrollToPosition(0);
+        lastFocused = 0;
+        lastFocusedKey = adapter.getItemCount() > 0 ? adapter.keyAt(0) : null;
+        grid.post(() -> focusTile(0));
+    }
+
+    private void moveGreetingBelowClock() {
+        View clockRow = (View) findViewById(R.id.clock).getParent();
+        LinearLayout clockColumn = (LinearLayout) clockRow.getParent();
+        ((ViewGroup) greeting.getParent()).removeView(greeting);
+        greeting.setAllCaps(false);
+        greeting.setLetterSpacing(0.01f);
+        greeting.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        greetingColor = 0xE6FFFFFF;
+        greeting.setTextColor(greetingColor);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginStart(Math.round(4 * density));
+        lp.topMargin = Math.round(2 * density);
+        clockColumn.addView(greeting, clockColumn.indexOfChild(clockRow) + 1, lp);
+        // The pills were aligned to the header's bottom, now the greeting's line: they move up beside the clock.
+        View buttons = findViewById(R.id.topButtons);
+        RelativeLayout.LayoutParams start = (RelativeLayout.LayoutParams) buttons.getLayoutParams();
+        start.removeRule(RelativeLayout.ALIGN_BOTTOM);
+        start.addRule(RelativeLayout.ALIGN_TOP, R.id.leftBlock);
+        start.bottomMargin = 0;
+        buttons.setLayoutParams(start);
+        // Centred on the clock row once both are measured; posted, as a relayout requested mid-layout can be dropped.
+        View.OnLayoutChangeListener beside = (v, l, t, r, b, ol, ot, or, ob) -> buttons.post(() -> {
+            RelativeLayout.LayoutParams p = (RelativeLayout.LayoutParams) buttons.getLayoutParams();
+            int top = Math.max(0, clockRow.getTop() + (clockRow.getHeight() - buttons.getHeight()) / 2);
+            if (p.topMargin == top) return;
+            p.topMargin = top;
+            buttons.setLayoutParams(p);
+        });
+        clockRow.addOnLayoutChangeListener(beside);
+        buttons.addOnLayoutChangeListener(beside);
+    }
+
+    /**
+     * wallpaper_slider: focus to an arrow, from a row's edge (sideways) or from the dock below. A focus scroll still
+     * waiting to settle would pull focus back onto a tile, so it is dropped first. False when there are no arrows.
+     */
+    private boolean focusWallpaperArrow(boolean left, boolean sideways) {
+        if (!wallpaperPlayer.hasArrows()) return false;
+        View from = getCurrentFocus();
+        return sideways ? wallpaperPlayer.focusArrow(left, from)
+                : wallpaperPlayer.focusArrowFromBelow(left, from);
     }
 
     // ---- glass highlight -------------------------------------------------------------------------
@@ -2214,9 +2283,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             int last = adapter.focusablePosition(count - 1);
             if (forward && position >= last) {
                 if (adapter.isLibraryAt(count)) focusLibrary();
+                else focusWallpaperArrow(keyCode == KeyEvent.KEYCODE_DPAD_LEFT, true);
                 return true;
             }
-            return !forward && position == 0;
+            if (!forward && position == 0) {
+                focusWallpaperArrow(keyCode == KeyEvent.KEYCODE_DPAD_LEFT, true);
+                return true;
+            }
+            return false;
         }
         // Horizontal: swallow the key at a row's ends so focus never wraps to the next row or
         // escapes up into the top bar. Mid-row moves fall through to the default focus search.
@@ -2228,11 +2302,33 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
             // In the dock, the last app is the row's end: the empty slots after it take no focus.
             int rowCount = position < COLUMNS ? Math.min(count, adapter.dockFilled()) : count;
-            return GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
+            boolean edge = GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
                     rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
+            if (!edge) return false;
+            // wallpaper_slider: the apps read as one wrapped stream. A row's end goes on to the next row's first
+            // app, a row's start back to the previous row's last; only the very first and the very last app go
+            // on to the arrow on that side.
+            if (wallpaperPlayer.hasArrows()) {
+                int last = adapter.focusablePosition(count - 1);
+                int wrap = -1;
+                if (forward && position < last) wrap = position < COLUMNS ? COLUMNS : position + 1;
+                else if (!forward && position > 0) wrap = position - 1;
+                if (wrap >= 0) {
+                    focusTile(wrap);
+                    grid.playSoundEffect(keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+                            ? SoundEffectConstants.NAVIGATION_LEFT : SoundEffectConstants.NAVIGATION_RIGHT);
+                    return true;
+                }
+            }
+            focusWallpaperArrow(keyCode == KeyEvent.KEYCODE_DPAD_LEFT, true);
+            return true;
         }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
+            if (position < COLUMNS) {
+                // wallpaper_slider: the arrows are one level above the dock; Up reaches the one on this side.
+                boolean leftHalf = (position % COLUMNS) * 2 < COLUMNS;
+                return focusWallpaperArrow(leftHalf != rtlAppGrid, false);
+            }
             target = position - COLUMNS;
         } else {
             int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
@@ -2476,8 +2572,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             greeting.setText(festiveGreeting);
             greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
         } else {
-            greeting.setText(greetingName.isEmpty() ? getString(res)
-                    : getString(R.string.greeting_with_name, getString(res), greetingName));
+            // greeting_below_clock shows it in Title Case: "Good Afternoon".
+            String part = greetingTitleCase ? Greeting.titleCase(getString(res), Locale.getDefault()) : getString(res);
+            greeting.setText(greetingName.isEmpty() ? part
+                    : getString(R.string.greeting_with_name, part, greetingName));
             greeting.setTextColor(greetingColor);
         }
         if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));

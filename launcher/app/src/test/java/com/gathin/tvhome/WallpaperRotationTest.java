@@ -58,12 +58,19 @@ public class WallpaperRotationTest {
         assertEquals("b.jpg", WallpaperRotation.next(images, "a.jpg").getName());
         assertEquals("c.jpg", WallpaperRotation.next(images, "b.jpg").getName());
         assertEquals("a.jpg", WallpaperRotation.next(images, "c.jpg").getName());
+        assertEquals("c.jpg", WallpaperRotation.previous(images, "a.jpg").getName());
+        assertEquals("a.jpg", WallpaperRotation.previous(images, "b.jpg").getName());
+        assertEquals("b.jpg", WallpaperRotation.previous(images, "c.jpg").getName());
         // A first run, or an image removed from the collection, starts at the first picture.
         assertEquals("a.jpg", WallpaperRotation.next(images, "").getName());
         assertEquals("a.jpg", WallpaperRotation.next(images, "gone.jpg").getName());
+        assertEquals("c.jpg", WallpaperRotation.previous(images, "gone.jpg").getName());
         assertEquals("only.jpg", WallpaperRotation.next(
                 Collections.singletonList(new File("only.jpg")), "only.jpg").getName());
+        assertEquals("only.jpg", WallpaperRotation.previous(
+            Collections.singletonList(new File("only.jpg")), "only.jpg").getName());
         assertNull(WallpaperRotation.next(Collections.emptyList(), ""));
+        assertNull(WallpaperRotation.previous(Collections.emptyList(), ""));
     }
 
     @Test
@@ -91,6 +98,8 @@ public class WallpaperRotationTest {
         List<File> images = Arrays.asList(new File("a.jpg"), new File("b.jpg"));
         assertEquals("b.jpg", WallpaperRotation.find(images, "b.jpg").getName());
         assertNull(WallpaperRotation.find(images, "c.jpg"));
+        assertEquals(1, WallpaperRotation.indexOf(images, "b.jpg"));
+        assertEquals(-1, WallpaperRotation.indexOf(images, "c.jpg"));
     }
 
     @Test

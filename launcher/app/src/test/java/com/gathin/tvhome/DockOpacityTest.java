@@ -22,4 +22,12 @@ public class DockOpacityTest {
         assertEquals(80, Config.chosenDockOpacity(29, 80));
         assertEquals(80, Config.chosenDockOpacity(101, 80));
     }
+
+    @Test
+    public void rotationChoiceOverridesTheThemeOnlyWithinRange() {
+        assertEquals(5, Config.chosenRotation(5, 60));
+        assertEquals(60, Config.chosenRotation(-1, 60));
+        assertEquals(60, Config.chosenRotation(0, 60));
+        assertEquals(60, Config.chosenRotation(1441, 60));
+    }
 }

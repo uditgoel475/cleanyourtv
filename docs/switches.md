@@ -28,8 +28,12 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `glass_style` | <img src="switches/glass_style.jpg" width="320" alt="glass_style halo on a TV"> |
 | `sky_intensity` | <img src="sky-sunset.jpg" width="320" alt="sky_intensity on a TV"> |
 | `wallpaper_rotation_minutes` | <img src="../themes/scenes/screenshot.jpg" width="320" alt="wallpaper_rotation_minutes on a TV"> |
+| `wallpaper_slider` | <img src="switches/wallpaper_slider.jpg" width="320" alt="wallpaper_slider on a TV"> |
 | `festival` | <img src="../themes/dussehra/screenshot.jpg" width="320" alt="festival on a TV"> |
 | `settings_key_panel` | <img src="quick-settings-panel.jpg" width="320" alt="settings_key_panel on a TV"> |
+| `settings_button_panel` | <img src="switches/settings_button_panel.jpg" width="320" alt="settings_button_panel on a TV"> |
+| `greeting_below_clock` | <img src="switches/greeting_below_clock.jpg" width="320" alt="greeting_below_clock on a TV"> |
+| `back_to_first_app` | <img src="switches/back_to_first_app.jpg" width="320" alt="back_to_first_app on a TV"> |
 | `home_idle_clock_minutes` | <img src="clock-screensaver.png" width="320" alt="home_idle_clock_minutes on a TV"> |
 | `gamepad_passthrough` | <img src="switches/gamepad_passthrough.jpg" width="320" alt="gamepad_passthrough on a TV"> |
 | `consume_volume_keys` | <img src="switches/consume_volume_keys.jpg" width="320" alt="consume_volume_keys on a TV"> |

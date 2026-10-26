@@ -187,6 +187,14 @@ public class HomeKeyService extends AccessibilityService {
             for (ResolveInfo ri : getPackageManager().queryIntentActivities(home, PackageManager.MATCH_DISABLED_COMPONENTS)) {
                 stockHome.add(ri.activityInfo.name);
             }
+            // No HOME activity (Xiaomi PatchWall on Android 9): its own boot receiver opens its TV launcher entry.
+            if (stockHome.isEmpty()) {
+                Intent entry = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+                        .setPackage(config.stockHomeRedirect);
+                for (ResolveInfo ri : getPackageManager().queryIntentActivities(entry, PackageManager.MATCH_DISABLED_COMPONENTS)) {
+                    stockHome.add(ri.activityInfo.name);
+                }
+            }
         }
         // power_on_home, off by default. Not with boot_to_live_tv, or with Live TV picked as the Open on start app:
         // those open Live TV on purpose at boot.

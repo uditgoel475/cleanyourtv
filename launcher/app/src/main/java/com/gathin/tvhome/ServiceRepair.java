@@ -11,6 +11,7 @@ import android.provider.Settings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Android takes an app's accessibility services off the enabled list when the app is force-stopped (Settings, a
@@ -22,6 +23,8 @@ import java.util.Objects;
  */
 final class ServiceRepair {
     private static final String PREFS = "accessibility_helpers";
+    /** One add-remove-add cycle at a time: Home can resume again during its two pauses. */
+    private static final AtomicBoolean RUNNING = new AtomicBoolean();
 
     private ServiceRepair() {
     }
@@ -67,6 +70,7 @@ final class ServiceRepair {
                 updated.append(name.flattenToShortString());
             }
             if (!missing) return;
+            if (!RUNNING.compareAndSet(false, true)) return;
             // A killed helper also lands on Android's "Crashed services" list (dumpsys accessibility), and a
             // crashed service is never bound again, so putting it back on the list alone binds nothing and the
             // switch falls back to 0 (Hisense songshan, Android 11, whose standby kills third-party apps). Android
@@ -87,6 +91,8 @@ final class ServiceRepair {
                     Settings.Secure.putInt(cr, Settings.Secure.ACCESSIBILITY_ENABLED, 1);
                 } catch (RuntimeException | InterruptedException ignored) {
                     // The setting is the system's; a refusal leaves the helper off, as before.
+                } finally {
+                    RUNNING.set(false);
                 }
             }, "ServiceRepair").start();
         } catch (RuntimeException ignored) {

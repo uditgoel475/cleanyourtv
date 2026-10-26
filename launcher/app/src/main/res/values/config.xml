@@ -29,12 +29,11 @@
 
     <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
     <string-array name="hidden_apps">
-        <item>com.mediatek.wwtv.tvcenter</item>
-        <item>com.mitv.gallery</item>
+       <item>com.android.tv</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
-    <string name="live_tv_package" translatable="false">com.mediatek.wwtv.tvcenter</string>
+      <string name="live_tv_package" translatable="false">com.android.tv</string>
 
     <!-- Open the Live TV app above the first time Home comes up after the TV is switched on, for sets that are
          mostly used for broadcast TV. Once per boot: Home after that stays Home. Can also be set with
@@ -151,6 +150,10 @@
          with TV settings, Display, Network, Apps (re-enable an app) and Launcher settings, over whatever is on screen.
          Both keys can also be set from a theme's config.json ("settings_key_keycodes": [83]). -->
     <bool name="settings_key_panel">false</bool>
+    <!-- The top bar's Settings button opens that same quick settings panel instead of the TV's Settings, with a
+         Play Store row when the Play Store is installed. Hold OK keeps the launcher menu. Can also be set with
+         "settings_button_panel": true in a theme's config.json. Off by default. -->
+    <bool name="settings_button_panel">false</bool>
 
     <!-- A force stop of the launcher (Settings, a cleaner app, am force-stop) takes HomeKeyService and InputKeyService
          off the enabled list. true: Home puts the helpers that were running back when it starts; one turned off in
@@ -195,7 +198,8 @@
     <!-- Package of the stock launcher, for TVs whose firmware turns it back on after it was disabled. XGIMI's
          com.xgimi.xrmservice does, on every one of its remote keys, power included (docs/TROUBLESHOOTING.md).
          Whenever that launcher's home screen comes up anyway, HomeKeyService (HOME_KEY_SERVICE=1) sends the TV
-         straight back here. A theme's config.json can set it too. Leave empty to omit. -->
+         straight back here. A theme's config.json can set it too. Leave empty to omit. A launcher with no HOME
+         activity (Xiaomi PatchWall, com.mitv.tvhome.atv, on Android 9) is caught by its TV launcher entry instead. -->
     <string name="stock_home_redirect" translatable="false"></string>
 
     <!-- For TVs whose firmware opens the Live TV app (live_tv_package) by itself at every power-on, with no setting
@@ -219,6 +223,12 @@
     <string name="greeting_name" translatable="false"></string>
     <!-- The greeting above the clock ("Good evening"). false hides it. Can also be set with "show_greeting" in a theme. -->
     <bool name="show_greeting">true</bool>
+    <!-- The greeting on its own line under the clock, larger and in Title Case ("Good Evening, Mr. Trịnh"),
+         instead of small capitals above it. Can also be set with "greeting_below_clock" in a theme. Off by default. -->
+    <bool name="greeting_below_clock">false</bool>
+    <!-- Back anywhere on Home (an app, a top-bar button, a wallpaper arrow) returns to the first app with the grid at
+         the top. Off: Back on Home does nothing. Can also be set with "back_to_first_app" in a theme. -->
+    <bool name="back_to_first_app">false</bool>
     <!-- The date and the line between the clock and the date in the clock's full white instead of dimmed. Can also be
          set with "header_white" in a theme. -->
     <bool name="header_white">false</bool>
@@ -299,6 +309,8 @@
          pictures in wallpapers/ ("01-dusk.jpg<TAB>Dusk over the peaks", one per line). A picture without a line
          shows no name. Can also be set with "wallpaper_captions": true in a theme's config.json. -->
     <bool name="wallpaper_captions">false</bool>
+     <!-- Show Home's previous/next wallpaper arrows and slide between pictures. Off by default; themes can enable it. -->
+     <bool name="wallpaper_slider">false</bool>
     <!-- Rotating wallpapers grouped by the time of day, as JSON: {"morning": [file names], "evening": [...],
          "night": [...]}. While set, the rotation picks only from the group that fits now: morning from sunrise to
          noon, evening until half an hour after sunset, night the rest, with the sun at latitude and longitude (07:00

@@ -94,6 +94,23 @@
             android:layout_marginTop="28dp" />
 
         <TextView
+            android:id="@+id/sliderChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/rotationChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/greetingNameChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="28dp" />
+
+        <TextView
             android:id="@+id/animationsChoice"
             style="@style/SettingsRow"
             android:layout_marginTop="28dp" />

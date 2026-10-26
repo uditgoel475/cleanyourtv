@@ -42,6 +42,11 @@ final class Config {
     static final String SETTINGS_NAME = "launcher_settings";
     static final String ROWS_BELOW_DOCK_KEY = "rows_below_dock";
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
+    /** Launcher settings' Wallpaper arrows choice, over the theme's wallpaper_slider. */
+    static final String WALLPAPER_SLIDER_KEY = "wallpaper_slider";
+    /** Launcher settings' choices over the theme's greeting_name and wallpaper_rotation_minutes. */
+    static final String GREETING_NAME_KEY = "greeting_name";
+    static final String ROTATION_KEY = "wallpaper_rotation_minutes";
     static final String DOCK_OPACITY_KEY = "dock_opacity";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
@@ -92,6 +97,10 @@ final class Config {
     final boolean dateBelowClock;
     /** Name after the greeting ("Good morning, Mr. Trịnh"); empty for the greeting alone. */
     final String greetingName;
+    /** The greeting on its own larger line under the clock instead of small above it (greeting_below_clock). */
+    final boolean greetingBelowClock;
+    /** Back anywhere on Home returns to the first app, scrolled to the top (back_to_first_app). */
+    final boolean backToFirstApp;
     final boolean moduleCards;
     /** Calmer motion for weak GPUs (config.xml, reduced_motion): stiff spring, short fades, no replay. */
     final boolean reducedMotion;
@@ -164,6 +173,8 @@ final class Config {
     final boolean powerOnHome;
     /** The Settings button opens the quick settings panel instead of the TV's Settings (settings_key_panel). */
     final boolean settingsKeyPanel;
+    /** The top bar's Settings button opens the quick settings panel (settings_button_panel). */
+    final boolean settingsButtonPanel;
     /** Home puts the remote's accessibility helpers back after a force stop (restore_key_services; ServiceRepair). */
     final boolean restoreKeyServices;
     /** Whether themes may show a wallpaper (config.json, wallpaper). */
@@ -224,6 +235,8 @@ final class Config {
     static final String GLASS_DEFAULT = "glass", GLASS_RIM = "rim", GLASS_HALO = "halo";
     /** Show each rotating wallpaper's name from wallpapers/captions.txt (config.xml / theme wallpaper_captions). */
     final boolean wallpaperCaptions;
+    /** Show Home's previous/next wallpaper arrows and animate collection changes (theme wallpaper_slider). */
+    final boolean wallpaperSlider;
     /** Answer VIEW_INPUTS with the Inputs menu (handle_view_inputs); see InputsRequestActivity. */
     final boolean handleViewInputs;
     /** Hold OK on a tile opens a menu (Move, Remove from Home, App info) instead of App info (config.xml / theme tile_menu). */
@@ -254,13 +267,13 @@ final class Config {
                    String inputUriScheme, int columns, int rowsBelowDock, boolean animations, boolean advancedEffects,
                    boolean shamsiDate, String greetingName, boolean moduleCards, boolean reducedMotion, boolean bootToLiveTv, boolean openOnStartChoice, boolean dockTitle, boolean dockRow, boolean topMenu, boolean launcherSettingsButton, boolean reorderButton, boolean showNetworkPill, boolean showInputsPill, boolean iconOnlyButtons, boolean iconOnlyInputs, boolean libraryButton, boolean showLibraryPill, int wifiLabelWidth, boolean alwaysShowNames, boolean wallpaperTrueColor, boolean focusOvershoot, String vpnApp,
                    boolean showHomeSettingsShortcut, boolean showStats, boolean appLibrary, boolean appLibrarySelection, boolean libraryOkOpens, boolean uniformTiles, int backgroundColor, int skyIntensity,
-                   int[] settingsKeycodes, boolean settingsKeyPanel, boolean restoreKeyServices, boolean wallpaperEnabled, File wallpaper, List<File> wallpapers,
+                   int[] settingsKeycodes, boolean settingsKeyPanel, boolean settingsButtonPanel, boolean restoreKeyServices, boolean wallpaperEnabled, File wallpaper, List<File> wallpapers,
                    int wallpaperRotationMinutes, int wallpaperDim, int dockOpacity, String wallpaperOrder, boolean overlayApplied,
                    Festival festival, int[] inputKeycodes, List<String> appKeys, String stockHomeRedirect,
                    List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow, boolean appGlow, boolean fadeRows, int homeIdleClockMinutes,
-                   boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
+                   boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions, boolean wallpaperSlider,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
-                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock) {
+                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean greetingBelowClock, boolean backToFirstApp, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock) {
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
         this.inputKeycodes = inputKeycodes;
@@ -322,6 +335,7 @@ final class Config {
         this.skyIntensity = skyIntensity;
         this.settingsKeycodes = settingsKeycodes;
         this.settingsKeyPanel = settingsKeyPanel;
+        this.settingsButtonPanel = settingsButtonPanel;
         this.restoreKeyServices = restoreKeyServices;
         this.wallpaperEnabled = wallpaperEnabled;
         this.wallpaper = wallpaper;
@@ -353,6 +367,8 @@ final class Config {
         this.wifiStatusWarnings = wifiStatusWarnings;
         this.topBarApps = Collections.unmodifiableList(topBarApps);
         this.showGreeting = showGreeting;
+        this.greetingBelowClock = greetingBelowClock;
+        this.backToFirstApp = backToFirstApp;
         this.headerWhite = headerWhite;
         this.clockWallpaper = clockWallpaper;
         this.clockWallpaperDim = clockWallpaperDim;
@@ -361,6 +377,7 @@ final class Config {
         this.dockBandAll = dockBandAll;
         this.glowStyle = glowStyle(glowStyle);
         this.wallpaperCaptions = wallpaperCaptions;
+        this.wallpaperSlider = wallpaperSlider;
         this.glassStyle = glassStyle(glassStyle);
     }
 
@@ -428,6 +445,7 @@ final class Config {
         boolean wallpaperTrueColor = res.getBoolean(R.bool.wallpaper_true_color);
         boolean focusOvershoot = res.getBoolean(R.bool.focus_overshoot);
         boolean wallpaperCaptions = res.getBoolean(R.bool.wallpaper_captions);
+        boolean wallpaperSlider = res.getBoolean(R.bool.wallpaper_slider);
         boolean tileMenu = res.getBoolean(R.bool.tile_menu);
         String vpn = res.getString(R.string.vpn_app).trim();
         boolean homeSettings = res.getBoolean(R.bool.show_home_settings_shortcut);
@@ -440,6 +458,7 @@ final class Config {
         int skyIntensity = res.getInteger(R.integer.sky_intensity);
         int[] settingsKeycodes = res.getIntArray(R.array.settings_key_keycodes);
         boolean settingsKeyPanel = res.getBoolean(R.bool.settings_key_panel);
+        boolean settingsButtonPanel = res.getBoolean(R.bool.settings_button_panel);
         boolean restoreKeyServices = res.getBoolean(R.bool.restore_key_services);
         int[] inputKeycodes = res.getIntArray(R.array.input_key_keycodes);
         boolean handleViewInputs = res.getBoolean(R.bool.handle_view_inputs);
@@ -468,6 +487,8 @@ final class Config {
         boolean dateBelowClock = res.getBoolean(R.bool.date_below_clock);
         List<String> topBarApps = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.top_bar_apps)));
         boolean showGreeting = res.getBoolean(R.bool.show_greeting);
+        boolean greetingBelowClock = res.getBoolean(R.bool.greeting_below_clock);
+        boolean backToFirstApp = res.getBoolean(R.bool.back_to_first_app);
         boolean headerWhite = res.getBoolean(R.bool.header_white);
         boolean clockWallpaper = res.getBoolean(R.bool.clock_wallpaper);
         int clockWallpaperDim = res.getInteger(R.integer.clock_wallpaper_dim);
@@ -527,6 +548,7 @@ final class Config {
             wallpaperTrueColor = bool(json, "wallpaper_true_color", wallpaperTrueColor);
             focusOvershoot = bool(json, "focus_overshoot", focusOvershoot);
             wallpaperCaptions = bool(json, "wallpaper_captions", wallpaperCaptions);
+            wallpaperSlider = bool(json, "wallpaper_slider", wallpaperSlider);
             tileMenu = bool(json, "tile_menu", tileMenu);
             vpn = string(json, "vpn_app", vpn);
             homeSettings = bool(json, "show_home_settings_shortcut", homeSettings);
@@ -539,6 +561,7 @@ final class Config {
             skyIntensity = integer(json, "sky_intensity", skyIntensity, 0, 100);
             settingsKeycodes = intArray(json, "settings_key_keycodes", settingsKeycodes);
             settingsKeyPanel = bool(json, "settings_key_panel", settingsKeyPanel);
+            settingsButtonPanel = bool(json, "settings_button_panel", settingsButtonPanel);
             restoreKeyServices = bool(json, "restore_key_services", restoreKeyServices);
             inputKeycodes = intArray(json, "input_key_keycodes", inputKeycodes);
             handleViewInputs = bool(json, "handle_view_inputs", handleViewInputs);
@@ -567,6 +590,8 @@ final class Config {
             dateBelowClock = bool(json, "date_below_clock", dateBelowClock);
             topBarApps = stringList(json, "top_bar_apps", topBarApps);
             showGreeting = bool(json, "show_greeting", showGreeting);
+            greetingBelowClock = bool(json, "greeting_below_clock", greetingBelowClock);
+            backToFirstApp = bool(json, "back_to_first_app", backToFirstApp);
             headerWhite = bool(json, "header_white", headerWhite);
             clockWallpaper = bool(json, "clock_wallpaper", clockWallpaper);
             clockWallpaperDim = integer(json, "clock_wallpaper_dim", clockWallpaperDim, 0, 90);
@@ -581,6 +606,9 @@ final class Config {
         // A theme push or reset invalidates choices made on the TV. On first use, remember the
         // current theme without clearing choices from an older launcher version.
         SharedPreferences choices = ctx.getSharedPreferences(SETTINGS_NAME, Context.MODE_PRIVATE);
+        if (choices.contains("greeting_announce")) choices.edit().remove("greeting_announce").apply();
+        ctx.getSharedPreferences(OpenOnStart.BOOT_PREFS, Context.MODE_PRIVATE).edit()
+            .remove("announced_boot").remove("announced_at").remove("standby_seen").apply();
         // Unmounted storage looks like a theme reset; compare only once the file is readable.
         if (mounted) syncThemeChoices(choices, dir, file);
         int chosenColumns = choices.getInt("columns", columns);
@@ -589,12 +617,16 @@ final class Config {
         if (chosenRows >= 0 && chosenRows <= 3) rowsBelow = chosenRows;
         animations = choices.getBoolean("animations", animations);
         advancedEffects = choices.getBoolean("advanced_effects", advancedEffects);
+        wallpaperSlider = choices.getBoolean(WALLPAPER_SLIDER_KEY, wallpaperSlider);
+        greetingName = choices.getString(GREETING_NAME_KEY, greetingName).trim();
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
         boolean wallpaperEnabled = json == null || bool(json, "wallpaper", true);
         if (!wallpaperEnabled) wallpaper = null;
         int rotationMinutes = json == null ? 0 : integer(json, "wallpaper_rotation_minutes", 0, 0, 1440);
+        // Launcher settings can change how often a rotating theme changes, not turn rotation on.
+        if (rotationMinutes > 0) rotationMinutes = chosenRotation(choices.getInt(ROTATION_KEY, -1), rotationMinutes);
         int wallpaperDim = json == null ? 0 : integer(json, "wallpaper_dim", 0, 0, 90);
         int dockOpacity = json == null ? 100 : integer(json, "dock_opacity", 100, 30, 100);
         dockOpacity = chosenDockOpacity(choices.getInt(DOCK_OPACITY_KEY, -1), dockOpacity);
@@ -628,12 +660,13 @@ final class Config {
                 openOnStartChoice, dockTitle, dockRow, topMenu, launcherSettingsButton, reorderButton, showNetworkPill, showInputsPill,
                 iconOnlyButtons, iconOnlyInputs, libraryButton, showLibraryPill, wifiLabelWidth, alwaysShowNames, wallpaperTrueColor, focusOvershoot,
                 vpn, homeSettings, showStats, library, librarySelection, libraryOkOpens, uniformTiles, background,
-                Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, restoreKeyServices, wallpaperEnabled, wallpaper,
+                Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, settingsButtonPanel, restoreKeyServices, wallpaperEnabled, wallpaper,
                 wallpapers, rotationMinutes, wallpaperDim, dockOpacity, wallpaperOrder, applied, festival, inputKeycodes, appKeys, stockHomeRedirect,
                 json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow, fadeRows,
-                Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu, dockEvenPadding,
+                Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, wallpaperSlider, handleViewInputs, tileMenu, dockEvenPadding,
                 dockBand, cinematicDots, cinematicWhiteFocus, wifiStatusColor, cinematicScrim, cinematicArt, wallpaperMoods, gamepadPassthrough,
-                consumeVolumeKeys, powerOnHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
+                consumeVolumeKeys, powerOnHome, wifiStatusWarnings, topBarApps, showGreeting, greetingBelowClock,
+                backToFirstApp, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                 dateBelowClock);
     }
@@ -679,11 +712,13 @@ final class Config {
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("columns").remove("animations")
                     .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
-                    .remove(DOCK_OPACITY_KEY);
+                    .remove(DOCK_OPACITY_KEY).remove(WALLPAPER_SLIDER_KEY).remove(GREETING_NAME_KEY)
+                    .remove(ROTATION_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("columns").remove("animations").remove("advanced_effects")
                     .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY).remove(DOCK_OPACITY_KEY)
+                    .remove(WALLPAPER_SLIDER_KEY).remove(GREETING_NAME_KEY).remove(ROTATION_KEY)
                     .putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }
@@ -691,6 +726,11 @@ final class Config {
     /** The dock band opacity chosen in Launcher settings, or the theme's when none (or an out-of-range one) is saved. */
     static int chosenDockOpacity(int chosen, int theme) {
         return chosen >= 30 && chosen <= 100 ? chosen : theme;
+    }
+
+    /** The rotation interval chosen in Launcher settings, or the theme's when none (or an out-of-range one) is saved. */
+    static int chosenRotation(int chosen, int theme) {
+        return chosen >= 1 && chosen <= 1440 ? chosen : theme;
     }
 
     private static String fileStamp(File file) {
