@@ -1,0 +1,11 @@
+{
+  "kit_version": "1.0.0",
+  "domain": "swe",
+  "scope": "all",
+  "services": [],
+  "apps": [],
+  "installed_plugins": [
+    "java-core"
+  ],
+  "customized_commands": []
+}
